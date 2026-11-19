@@ -1,0 +1,60 @@
+@Metadata.layer: #CUSTOMER
+@UI.headerInfo: { typeName: 'Invoice',
+                  typeNamePlural: 'Invoices',
+                  title:       { type: #STANDARD, value: 'InvoiceId' },
+                  description: { type: #STANDARD, value: 'SupplierName' } }
+annotate entity ZC_IG_Invoice with
+{
+  @UI.facet: [
+    { id: 'General', purpose: #STANDARD, type: #IDENTIFICATION_REFERENCE,
+      label: 'General', position: 10 },
+    { id: 'Items',   purpose: #STANDARD, type: #LINEITEM_REFERENCE,
+      label: 'Items',   position: 20, targetElement: '_Item' } ]
+
+  @UI.hidden: true
+  InvoiceUuid;
+
+  @EndUserText.label: 'Invoice No.'
+  @UI: { lineItem: [{ position: 10 }], selectionField: [{ position: 10 }] }
+  InvoiceId;
+
+  @EndUserText.label: 'Supplier'
+  @UI: { lineItem: [{ position: 20 }], identification: [{ position: 10 }],
+         selectionField: [{ position: 20 }] }
+  SupplierId;
+
+  @EndUserText.label: 'Supplier Name'
+  @UI: { lineItem: [{ position: 30 }] }
+  SupplierName;
+
+  @EndUserText.label: 'Supplier Invoice Ref.'
+  @UI: { lineItem: [{ position: 40 }], identification: [{ position: 20 }] }
+  SupplierInvoiceRef;
+
+  @EndUserText.label: 'Invoice Date'
+  @UI: { lineItem: [{ position: 50 }], identification: [{ position: 30 }] }
+  InvoiceDate;
+
+  @EndUserText.label: 'Gross Amount'
+  @UI: { lineItem: [{ position: 60 }], identification: [{ position: 40 }] }
+  GrossAmount;
+
+  @EndUserText.label: 'Currency'
+  Currency;
+
+  @EndUserText.label: 'Status'
+  @UI: { lineItem: [{ position: 70 }], identification: [{ position: 50 }],
+         selectionField: [{ position: 30 }] }
+  Status;
+
+  @EndUserText.label: 'Discount Due Date'
+  @UI: { lineItem: [{ position: 80 }], identification: [{ position: 60 }] }
+  DiscountDueDate;
+
+  @EndUserText.label: 'Net Due Date'
+  @UI: { identification: [{ position: 70 }] }
+  NetDueDate;
+
+  @UI.hidden: true
+  LocalLastChangedAt;
+}

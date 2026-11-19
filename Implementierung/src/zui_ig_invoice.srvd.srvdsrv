@@ -1,0 +1,5 @@
+@EndUserText.label: 'Service for invoice app'
+define service ZUI_IG_INVOICE {
+  expose ZC_IG_Invoice     as Invoice;
+  expose ZC_IG_InvoiceItem as Invoiceitem;
+}
