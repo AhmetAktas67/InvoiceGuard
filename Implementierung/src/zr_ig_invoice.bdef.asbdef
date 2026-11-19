@@ -1,0 +1,86 @@
+managed implementation in class zbp_r_ig_invoice unique;
+strict ( 2 );
+with draft;
+
+define behavior for ZR_IG_Invoice alias Invoice
+persistent table zig_invoice
+draft table zig_invoice_d
+etag master LocalLastChangedAt
+lock master total etag LastChangedAt
+authorization master ( instance )
+{
+  create ( authorization : global );
+  update;
+  delete;
+
+  field ( numbering : managed, readonly ) InvoiceUuid;
+  field ( readonly ) InvoiceId, Status, DiscountDueDate, NetDueDate,
+                     LocalCreatedBy, LocalCreatedAt, LocalLastChangedBy,
+                     LocalLastChangedAt, LastChangedAt;
+  field ( mandatory ) SupplierId, SupplierInvoiceRef, InvoiceDate, GrossAmount, Currency;
+
+  association _Item { create; with draft; }
+
+  draft action Activate optimized;
+  draft action Discard;
+  draft action Edit;
+  draft action Resume;
+  draft determine action Prepare;
+
+  mapping for zig_invoice
+  {
+    InvoiceUuid        = invoice_uuid;
+    InvoiceId          = invoice_id;
+    SupplierId         = supplier_id;
+    SupplierInvoiceRef = supplier_invoice_ref;
+    InvoiceDate        = invoice_date;
+    GrossAmount        = gross_amount;
+    Currency           = currency;
+    Status             = status;
+    DiscountDueDate    = discount_due_date;
+    NetDueDate         = net_due_date;
+    LocalCreatedBy     = local_created_by;
+    LocalCreatedAt     = local_created_at;
+    LocalLastChangedBy = local_last_changed_by;
+    LocalLastChangedAt = local_last_changed_at;
+    LastChangedAt      = last_changed_at;
+  }
+}
+
+define behavior for ZR_IG_InvoiceItem alias Item
+persistent table zig_invoice_item
+draft table zig_invitem_d
+etag master LocalLastChangedAt
+lock dependent by _Invoice
+authorization dependent by _Invoice
+{
+  update;
+  delete;
+
+  field ( numbering : managed, readonly ) ItemUuid;
+  field ( readonly ) InvoiceUuid, CheckStatus,
+                     LocalCreatedBy, LocalCreatedAt, LocalLastChangedBy,
+                     LocalLastChangedAt, LastChangedAt;
+  field ( mandatory ) PoId, PoItem, Quantity, Unit, NetPrice, Currency;
+
+  association _Invoice { with draft; }
+
+  mapping for zig_invoice_item
+  {
+    ItemUuid           = item_uuid;
+    InvoiceUuid        = invoice_uuid;
+    ItemNo             = item_no;
+    PoId               = po_id;
+    PoItem             = po_item;
+    Quantity           = quantity;
+    Unit               = unit;
+    NetPrice           = net_price;
+    Currency           = currency;
+    CheckStatus        = check_status;
+    LocalCreatedBy     = local_created_by;
+    LocalCreatedAt     = local_created_at;
+    LocalLastChangedBy = local_last_changed_by;
+    LocalLastChangedAt = local_last_changed_at;
+    LastChangedAt      = last_changed_at;
+  }
+}
