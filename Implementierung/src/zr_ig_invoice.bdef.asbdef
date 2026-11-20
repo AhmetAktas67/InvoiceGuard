@@ -19,6 +19,8 @@ authorization master ( instance )
                      LocalLastChangedAt, LastChangedAt;
   field ( mandatory ) SupplierId, SupplierInvoiceRef, InvoiceDate, GrossAmount, Currency;
 
+  determination setInvoiceId on save { create; }
+
   association _Item { create; with draft; }
 
   draft action Activate optimized;
