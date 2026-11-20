@@ -20,6 +20,7 @@ authorization master ( instance )
   field ( mandatory ) SupplierId, SupplierInvoiceRef, InvoiceDate, GrossAmount, Currency;
 
   determination setInvoiceId on save { create; }
+  determination calculateDueDates on modify { field SupplierId, InvoiceDate; }
 
   association _Item { create; with draft; }
 
@@ -46,6 +47,11 @@ authorization master ( instance )
     LocalLastChangedBy = local_last_changed_by;
     LocalLastChangedAt = local_last_changed_at;
     LastChangedAt      = last_changed_at;
+  }
+  side effects
+  {
+    field SupplierId  affects field DiscountDueDate, field NetDueDate;
+    field InvoiceDate affects field DiscountDueDate, field NetDueDate;
   }
 }
 

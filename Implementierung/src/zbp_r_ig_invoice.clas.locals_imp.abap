@@ -9,6 +9,8 @@ CLASS lhc_Invoice DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
     METHODS setInvoiceId FOR DETERMINE ON SAVE
       keys FOR Invoice~setInvoiceId.
+    METHODS calculateDueDates FOR DETERMINE ON MODIFY
+      keys FOR Invoice~calculateDueDates.
 
 ENDCLASS.
 
@@ -57,6 +59,49 @@ CLASS lhc_Invoice IMPLEMENTATION.
         WITH VALUE #( FOR invoice IN invoices INDEX INTO i
                       ( %tky      = invoice-%tky
                         InvoiceId = |{ prefix }{ last_number + i WIDTH = 5 ALIGN = RIGHT PAD = '0' }| ) ).
+
+
+  ENDMETHOD.
+
+  METHOD calculateDueDates.
+    READ ENTITIES OF zr_ig_invoice IN LOCAL MODE
+      ENTITY Invoice
+        FIELDS ( SupplierId InvoiceDate )
+        WITH CORRESPONDING #( keys )
+      RESULT DATA(invoices).
+
+    DELETE invoices WHERE SupplierId IS INITIAL OR InvoiceDate IS INITIAL.
+    IF invoices IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    SELECT FROM zi_ig_supplier
+      FIELDS SupplierId, DiscountDays, NetDays
+      FOR ALL ENTRIES IN @invoices
+      WHERE SupplierId = @invoices-SupplierId
+      INTO TABLE @DATA(suppliers).
+
+      DATA updates TYPE TABLE FOR UPDATE zr_ig_invoice\\Invoice.
+
+    LOOP AT invoices INTO DATA(invoice).
+      READ TABLE suppliers INTO DATA(supplier)
+           WITH KEY SupplierId = invoice-SupplierId.
+      IF sy-subrc <> 0.
+        CONTINUE.
+      ENDIF.
+
+      APPEND VALUE #( %tky            = invoice-%tky
+                      DiscountDueDate = COND #( WHEN supplier-DiscountDays > 0
+                                                THEN invoice-InvoiceDate + supplier-DiscountDays )
+                      NetDueDate      = invoice-InvoiceDate + supplier-NetDays )
+             TO updates.
+    ENDLOOP.
+
+    MODIFY ENTITIES OF zr_ig_invoice IN LOCAL MODE
+      ENTITY Invoice
+        UPDATE FIELDS ( DiscountDueDate NetDueDate )
+        WITH updates.
+
 
 
   ENDMETHOD.
