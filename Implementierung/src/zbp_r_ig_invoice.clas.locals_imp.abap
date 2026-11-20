@@ -13,6 +13,11 @@ CLASS lhc_Invoice DEFINITION INHERITING FROM cl_abap_behavior_handler.
       keys FOR Invoice~calculateDueDates.
     METHODS validateSupplier FOR VALIDATE ON SAVE
       keys FOR Invoice~validateSupplier.
+    METHODS validateAmount FOR VALIDATE ON SAVE
+      keys FOR Invoice~validateAmount.
+
+    METHODS validateDuplicate FOR VALIDATE ON SAVE
+      keys FOR Invoice~validateDuplicate.
 
 ENDCLASS.
 
@@ -163,6 +168,64 @@ CLASS lhc_Invoice IMPLEMENTATION.
     ENDLOOP.
 
 
+  ENDMETHOD.
+
+  METHOD validateAmount.
+    READ ENTITIES OF zr_ig_invoice IN LOCAL MODE
+      ENTITY Invoice FIELDS ( GrossAmount ) WITH CORRESPONDING #( keys )
+      RESULT DATA(invoices).
+
+    LOOP AT invoices INTO DATA(invoice).
+      APPEND VALUE #( %tky = invoice-%tky %state_area = 'VALIDATE_AMOUNT' ) TO reported-invoice.
+
+      IF invoice-GrossAmount <= 0.
+        APPEND VALUE #( %tky = invoice-%tky ) TO failed-invoice.
+        APPEND VALUE #( %tky        = invoice-%tky
+                        %state_area = 'VALIDATE_AMOUNT'
+                        %msg        = new_message( id       = 'ZIG_MSG'
+                                                   number   = '003'
+                                                   severity = if_abap_behv_message=>severity-error )
+                        %element-GrossAmount = if_abap_behv=>mk-on ) TO reported-invoice.
+      ENDIF.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD validateDuplicate.
+   READ ENTITIES OF zr_ig_invoice IN LOCAL MODE
+      ENTITY Invoice FIELDS ( SupplierId SupplierInvoiceRef ) WITH CORRESPONDING #( keys )
+      RESULT DATA(invoices).
+
+    IF invoices IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    SELECT FROM zr_ig_invoice
+      FIELDS InvoiceUuid, InvoiceId, SupplierId, SupplierInvoiceRef
+      FOR ALL ENTRIES IN @invoices
+      WHERE SupplierId         = @invoices-SupplierId
+        AND SupplierInvoiceRef = @invoices-SupplierInvoiceRef
+      INTO TABLE @DATA(existing).
+
+    LOOP AT invoices INTO DATA(invoice).
+      APPEND VALUE #( %tky = invoice-%tky %state_area = 'VALIDATE_DUPLICATE' ) TO reported-invoice.
+
+      LOOP AT existing INTO DATA(ex)
+           WHERE SupplierId         = invoice-SupplierId
+             AND SupplierInvoiceRef = invoice-SupplierInvoiceRef
+             AND InvoiceUuid       <> invoice-InvoiceUuid.
+        APPEND VALUE #( %tky = invoice-%tky ) TO failed-invoice.
+        APPEND VALUE #( %tky        = invoice-%tky
+                        %state_area = 'VALIDATE_DUPLICATE'
+                        %msg        = new_message( id       = 'ZIG_MSG'
+                                                   number   = '004'
+                                                   severity = if_abap_behv_message=>severity-error
+                                                   v1       = invoice-SupplierInvoiceRef
+                                                   v2       = invoice-SupplierId
+                                                   v3       = ex-InvoiceId )
+                        %element-SupplierInvoiceRef = if_abap_behv=>mk-on ) TO reported-invoice.
+        EXIT.
+      ENDLOOP.
+    ENDLOOP.
   ENDMETHOD.
 
 ENDCLASS.

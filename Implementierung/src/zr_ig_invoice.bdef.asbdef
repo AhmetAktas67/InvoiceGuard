@@ -23,6 +23,8 @@ authorization master ( instance )
   determination calculateDueDates on modify { field SupplierId, InvoiceDate; }
 
  validation validateSupplier on save { create; field SupplierId; }
+ validation validateAmount    on save { create; field GrossAmount; }
+ validation validateDuplicate on save { create; field SupplierId, SupplierInvoiceRef; }
 
   association _Item { create; with draft; }
 
@@ -33,6 +35,8 @@ authorization master ( instance )
   draft determine action Prepare
   {
     validation validateSupplier;
+    validation validateAmount;
+    validation validateDuplicate;
   }
 
   mapping for zig_invoice

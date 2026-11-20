@@ -20,6 +20,18 @@
      <MSGNR>002</MSGNR>
      <TEXT>Supplier &amp;1 is blocked for payment</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZIG_MSG</ARBGB>
+     <MSGNR>003</MSGNR>
+     <TEXT>Gross amount must be greater than zero</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZIG_MSG</ARBGB>
+     <MSGNR>004</MSGNR>
+     <TEXT>Invoice &amp;1 of supplier &amp;2 already exists as &amp;3</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>
