@@ -11,6 +11,8 @@ CLASS lhc_Invoice DEFINITION INHERITING FROM cl_abap_behavior_handler.
       keys FOR Invoice~setInvoiceId.
     METHODS calculateDueDates FOR DETERMINE ON MODIFY
       keys FOR Invoice~calculateDueDates.
+    METHODS validateSupplier FOR VALIDATE ON SAVE
+      keys FOR Invoice~validateSupplier.
 
 ENDCLASS.
 
@@ -102,6 +104,63 @@ CLASS lhc_Invoice IMPLEMENTATION.
         UPDATE FIELDS ( DiscountDueDate NetDueDate )
         WITH updates.
 
+
+
+  ENDMETHOD.
+
+  METHOD validateSupplier.
+    READ ENTITIES OF zr_ig_invoice IN LOCAL MODE
+      ENTITY Invoice
+        FIELDS ( SupplierId )
+        WITH CORRESPONDING #( keys )
+      RESULT DATA(invoices).
+
+    IF invoices IS INITIAL.
+      RETURN.
+    ENDIF.
+
+    SELECT FROM zi_ig_supplier
+      FIELDS SupplierId, IsBlocked
+      FOR ALL ENTRIES IN @invoices
+      WHERE SupplierId = @invoices-SupplierId
+      INTO TABLE @DATA(suppliers).
+
+       LOOP AT invoices INTO DATA(invoice).
+
+      " alte Meldung dieser Prüfung entfernen
+      APPEND VALUE #( %tky        = invoice-%tky
+                      %state_area = 'VALIDATE_SUPPLIER' )
+             TO reported-invoice.
+
+      READ TABLE suppliers INTO DATA(supplier)
+           WITH KEY SupplierId = invoice-SupplierId.
+
+      IF sy-subrc <> 0.
+        " Fehler 1: Lieferant existiert nicht
+        APPEND VALUE #( %tky = invoice-%tky ) TO failed-invoice.
+        APPEND VALUE #( %tky        = invoice-%tky
+                        %state_area = 'VALIDATE_SUPPLIER'
+                        %msg        = new_message( id       = 'ZIG_MSG'
+                                                   number   = '001'
+                                                   severity = if_abap_behv_message=>severity-error
+                                                   v1       = invoice-SupplierId )
+                        %element-SupplierId = if_abap_behv=>mk-on )
+               TO reported-invoice.
+
+      ELSEIF supplier-IsBlocked = abap_true.
+        " Fehler 2: Lieferant gesperrt
+        APPEND VALUE #( %tky = invoice-%tky ) TO failed-invoice.
+        APPEND VALUE #( %tky        = invoice-%tky
+                        %state_area = 'VALIDATE_SUPPLIER'
+                        %msg        = new_message( id       = 'ZIG_MSG'
+                                                   number   = '002'
+                                                   severity = if_abap_behv_message=>severity-error
+                                                   v1       = invoice-SupplierId )
+                        %element-SupplierId = if_abap_behv=>mk-on )
+               TO reported-invoice.
+      ENDIF.
+
+    ENDLOOP.
 
 
   ENDMETHOD.

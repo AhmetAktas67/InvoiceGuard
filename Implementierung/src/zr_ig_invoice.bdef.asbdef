@@ -22,13 +22,18 @@ authorization master ( instance )
   determination setInvoiceId on save { create; }
   determination calculateDueDates on modify { field SupplierId, InvoiceDate; }
 
+ validation validateSupplier on save { create; field SupplierId; }
+
   association _Item { create; with draft; }
 
   draft action Activate optimized;
   draft action Discard;
   draft action Edit;
   draft action Resume;
-  draft determine action Prepare;
+  draft determine action Prepare
+  {
+    validation validateSupplier;
+  }
 
   mapping for zig_invoice
   {
