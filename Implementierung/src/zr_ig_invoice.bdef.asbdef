@@ -14,7 +14,7 @@ authorization master ( instance )
   delete ( features : instance );
 
   field ( numbering : managed, readonly ) InvoiceUuid;
-  field ( readonly ) InvoiceId, Status, DiscountDueDate, NetDueDate,
+  field ( readonly ) InvoiceId, Status, DiscountDueDate, NetDueDate, StatusCriticality,
                      LocalCreatedBy, LocalCreatedAt, LocalLastChangedBy,
                      LocalLastChangedAt, LastChangedAt;
   field ( mandatory ) SupplierId, SupplierInvoiceRef, InvoiceDate, GrossAmount, Currency;
@@ -25,7 +25,8 @@ authorization master ( instance )
  validation validateSupplier on save { create; field SupplierId; }
  validation validateAmount    on save { create; field GrossAmount; }
  validation validateDuplicate on save { create; field SupplierId, SupplierInvoiceRef; }
- validation validateMandatory on save { create; field InvoiceDate, SupplierInvoiceRef; }
+ validation validateMandatory on save { create; field InvoiceDate, SupplierInvoiceRef, Currency; }
+
 
   action ( features : instance ) checkInvoice result [1] $self;
 

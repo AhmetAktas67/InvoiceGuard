@@ -299,7 +299,7 @@ CLASS lhc_Invoice IMPLEMENTATION.
 
   METHOD validateMandatory.
     READ ENTITIES OF zr_ig_invoice IN LOCAL MODE
-      ENTITY Invoice FIELDS ( InvoiceDate SupplierInvoiceRef ) WITH CORRESPONDING #( keys )
+      ENTITY Invoice FIELDS ( InvoiceDate SupplierInvoiceRef Currency ) WITH CORRESPONDING #( keys )
       RESULT DATA(invoices).
 
 
@@ -327,6 +327,18 @@ CLASS lhc_Invoice IMPLEMENTATION.
                                                    v1       = 'Supplier Invoice Ref.' )
                         %element-SupplierInvoiceRef = if_abap_behv=>mk-on ) TO reported-invoice.
       ENDIF.
+
+        IF invoice-Currency IS INITIAL.
+        APPEND VALUE #( %tky = invoice-%tky ) TO failed-invoice.
+        APPEND VALUE #( %tky        = invoice-%tky
+                        %state_area = 'VALIDATE_MANDATORY'
+                        %msg        = new_message( id       = 'ZIG_MSG'
+                                                   number   = '006'
+                                                   severity = if_abap_behv_message=>severity-error
+                                                   v1       = 'Currency' )
+                        %element-Currency = if_abap_behv=>mk-on ) TO reported-invoice.
+      ENDIF.
+
     ENDLOOP.
 
       ENDMETHOD.

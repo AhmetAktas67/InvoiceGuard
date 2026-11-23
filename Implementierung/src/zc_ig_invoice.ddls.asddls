@@ -3,7 +3,7 @@
 @Metadata.allowExtensions: true
 define root view entity ZC_IG_Invoice 
 provider contract transactional_query
-as projection on ZR_IG_INVOICE
+as projection on ZR_IG_Invoice
 {
     key InvoiceUuid,
     InvoiceId,
@@ -14,6 +14,7 @@ as projection on ZR_IG_INVOICE
     GrossAmount,
     Currency,
     Status,
+    StatusCriticality,
     DiscountDueDate,
     NetDueDate,
     LocalCreatedBy,

@@ -38,6 +38,12 @@
      <MSGNR>005</MSGNR>
      <TEXT>Purchase order item &amp;1/&amp;2 does not exist</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZIG_MSG</ARBGB>
+     <MSGNR>006</MSGNR>
+     <TEXT>Please enter a value for &amp;1</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

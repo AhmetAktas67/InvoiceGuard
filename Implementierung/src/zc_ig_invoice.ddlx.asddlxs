@@ -45,14 +45,17 @@ annotate entity ZC_IG_Invoice with
   Currency;
 
   @EndUserText.label: 'Status'
-   @UI: { lineItem:       [ { position: 70 },
+  @UI: { lineItem:       [ { position: 70, criticality: 'StatusCriticality' },
                            { type: #FOR_ACTION, dataAction: 'checkInvoice',   label: 'Check' },
                            { type: #FOR_ACTION, dataAction: 'releaseInvoice', label: 'Release' } ],
-         identification: [ { position: 50 },
+         identification: [ { position: 50, criticality: 'StatusCriticality' },
                            { type: #FOR_ACTION, dataAction: 'checkInvoice',   label: 'Check' },
                            { type: #FOR_ACTION, dataAction: 'releaseInvoice', label: 'Release' } ],
          selectionField: [ { position: 30 } ] }
   Status;
+
+  @UI.hidden: true
+  statuscriticality;
 
   @EndUserText.label: 'Discount Due Date'
   @UI: { lineItem: [{ position: 80 }], identification: [{ position: 60 }] }

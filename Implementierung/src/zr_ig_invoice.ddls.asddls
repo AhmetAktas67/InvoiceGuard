@@ -16,6 +16,12 @@ association [1..1] to ZI_IG_Supplier    as _Supplier
     gross_amount as GrossAmount,
     currency as Currency,
     status as Status,
+     case status
+        when 'O' then 3
+        when 'F' then 3
+        when 'A' then 1
+        else 0
+      end as StatusCriticality,
     discount_due_date as DiscountDueDate,
     net_due_date as NetDueDate,
    @Semantics.user.createdBy: true
