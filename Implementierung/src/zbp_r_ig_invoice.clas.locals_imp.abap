@@ -24,6 +24,8 @@ CLASS lhc_Invoice DEFINITION INHERITING FROM cl_abap_behavior_handler.
       keys FOR Invoice~validateMandatory.
     METHODS releaseInvoice FOR MODIFY
       keys FOR ACTION Invoice~releaseInvoice RESULT result.
+    METHODS get_instance_features FOR INSTANCE FEATURES
+      keys REQUEST requested_features FOR Invoice RESULT result.
 
 ENDCLASS.
 
@@ -341,6 +343,25 @@ CLASS lhc_Invoice IMPLEMENTATION.
       RESULT DATA(invoices).
 
     result = VALUE #( FOR invoice IN invoices ( %tky = invoice-%tky %param = invoice ) ).
+  ENDMETHOD.
+
+  METHOD get_instance_features.
+  READ ENTITIES OF zr_ig_invoice IN LOCAL MODE
+      ENTITY Invoice FIELDS ( Status ) WITH CORRESPONDING #( keys )
+      RESULT DATA(invoices).
+
+    result = VALUE #( FOR invoice IN invoices
+      LET released = xsdbool( invoice-Status = 'F' )
+          checked  = xsdbool( invoice-Status = 'O' )
+          on       = if_abap_behv=>fc-o-enabled
+          off      = if_abap_behv=>fc-o-disabled
+      IN
+      ( %tky                   = invoice-%tky
+        %update                = COND #( WHEN released = abap_true THEN off ELSE on )
+        %delete                = COND #( WHEN released = abap_true THEN off ELSE on )
+        %action-Edit           = COND #( WHEN released = abap_true THEN off ELSE on )
+        %action-checkInvoice   = COND #( WHEN released = abap_true THEN off ELSE on )
+        %action-releaseInvoice = COND #( WHEN checked  = abap_true THEN on  ELSE off ) ) ).
   ENDMETHOD.
 
 ENDCLASS.

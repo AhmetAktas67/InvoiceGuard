@@ -19,6 +19,7 @@ annotate entity ZC_IG_Invoice with
   InvoiceId;
 
   @EndUserText.label: 'Supplier'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'ZI_IG_Supplier', element: 'SupplierId' } }]
   @UI: { lineItem: [{ position: 20 }], identification: [{ position: 10 }],
          selectionField: [{ position: 20 }] }
   SupplierId;
@@ -40,15 +41,16 @@ annotate entity ZC_IG_Invoice with
   GrossAmount;
 
   @EndUserText.label: 'Currency'
+  @Consumption.valueHelpDefinition: [{ entity: { name: 'I_CurrencyStdVH', element: 'Currency' } }]
   Currency;
 
   @EndUserText.label: 'Status'
    @UI: { lineItem:       [ { position: 70 },
-                           { type: #FOR_ACTION, dataAction: 'checkInvoice', label: 'Check' } ],
+                           { type: #FOR_ACTION, dataAction: 'checkInvoice',   label: 'Check' },
+                           { type: #FOR_ACTION, dataAction: 'releaseInvoice', label: 'Release' } ],
          identification: [ { position: 50 },
-                          { type: #FOR_ACTION, dataAction: 'releaseInvoice', label: 'Release' }
-                           
-                            ],
+                           { type: #FOR_ACTION, dataAction: 'checkInvoice',   label: 'Check' },
+                           { type: #FOR_ACTION, dataAction: 'releaseInvoice', label: 'Release' } ],
          selectionField: [ { position: 30 } ] }
   Status;
 
