@@ -32,6 +32,12 @@
      <MSGNR>004</MSGNR>
      <TEXT>Invoice &amp;1 of supplier &amp;2 already exists as &amp;3</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZIG_MSG</ARBGB>
+     <MSGNR>005</MSGNR>
+     <TEXT>Purchase order item &amp;1/&amp;2 does not exist</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>
