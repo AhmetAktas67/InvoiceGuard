@@ -43,8 +43,11 @@ annotate entity ZC_IG_Invoice with
   Currency;
 
   @EndUserText.label: 'Status'
-  @UI: { lineItem: [{ position: 70 }], identification: [{ position: 50 }],
-         selectionField: [{ position: 30 }] }
+   @UI: { lineItem:       [ { position: 70 },
+                           { type: #FOR_ACTION, dataAction: 'checkInvoice', label: 'Check' } ],
+         identification: [ { position: 50 },
+                           { type: #FOR_ACTION, dataAction: 'checkInvoice', label: 'Check' } ],
+         selectionField: [ { position: 30 } ] }
   Status;
 
   @EndUserText.label: 'Discount Due Date'

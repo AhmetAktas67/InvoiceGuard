@@ -26,6 +26,8 @@ authorization master ( instance )
  validation validateAmount    on save { create; field GrossAmount; }
  validation validateDuplicate on save { create; field SupplierId, SupplierInvoiceRef; }
 
+  action checkInvoice result [1] $self;
+
   association _Item { create; with draft; }
 
   draft action Activate optimized;
@@ -61,6 +63,7 @@ authorization master ( instance )
   {
     field SupplierId  affects field DiscountDueDate, field NetDueDate;
     field InvoiceDate affects field DiscountDueDate, field NetDueDate;
+    action checkInvoice affects entity _Item;
   }
 }
 
