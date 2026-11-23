@@ -15,6 +15,7 @@ define behavior for ZC_IG_Invoice alias Invoice
   use action Resume;
   use action Prepare;
   use action checkInvoice;
+  use action releaseInvoice;
 
   use association _Item { create; with draft; }
 }

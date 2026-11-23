@@ -46,7 +46,9 @@ annotate entity ZC_IG_Invoice with
    @UI: { lineItem:       [ { position: 70 },
                            { type: #FOR_ACTION, dataAction: 'checkInvoice', label: 'Check' } ],
          identification: [ { position: 50 },
-                           { type: #FOR_ACTION, dataAction: 'checkInvoice', label: 'Check' } ],
+                          { type: #FOR_ACTION, dataAction: 'releaseInvoice', label: 'Release' }
+                           
+                            ],
          selectionField: [ { position: 30 } ] }
   Status;
 

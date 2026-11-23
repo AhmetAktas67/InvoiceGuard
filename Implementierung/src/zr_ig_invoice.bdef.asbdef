@@ -25,8 +25,10 @@ authorization master ( instance )
  validation validateSupplier on save { create; field SupplierId; }
  validation validateAmount    on save { create; field GrossAmount; }
  validation validateDuplicate on save { create; field SupplierId, SupplierInvoiceRef; }
+ validation validateMandatory on save { create; field InvoiceDate, SupplierInvoiceRef; }
 
   action checkInvoice result [1] $self;
+  action releaseInvoice result [1] $self;
 
   association _Item { create; with draft; }
 
@@ -39,6 +41,7 @@ authorization master ( instance )
     validation validateSupplier;
     validation validateAmount;
     validation validateDuplicate;
+    validation validateMandatory;
   }
 
   mapping for zig_invoice

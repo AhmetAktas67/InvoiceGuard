@@ -20,6 +20,10 @@ CLASS lhc_Invoice DEFINITION INHERITING FROM cl_abap_behavior_handler.
       keys FOR Invoice~validateDuplicate.
     METHODS checkInvoice FOR MODIFY
       keys FOR ACTION Invoice~checkInvoice RESULT result.
+    METHODS validateMandatory FOR VALIDATE ON SAVE
+      keys FOR Invoice~validateMandatory.
+    METHODS releaseInvoice FOR MODIFY
+      keys FOR ACTION Invoice~releaseInvoice RESULT result.
 
 ENDCLASS.
 
@@ -126,7 +130,7 @@ CLASS lhc_Invoice IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    SELECT FROM zi_ig_supplier
+    SELECT FROM zi_ig_supplier WITH PRIVILEGED ACCESS
       FIELDS SupplierId, IsBlocked
       FOR ALL ENTRIES IN @invoices
       WHERE SupplierId = @invoices-SupplierId
@@ -201,7 +205,7 @@ CLASS lhc_Invoice IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    SELECT FROM zr_ig_invoice
+    SELECT FROM zr_ig_invoice WITH PRIVILEGED ACCESS
       FIELDS InvoiceUuid, InvoiceId, SupplierId, SupplierInvoiceRef
       FOR ALL ENTRIES IN @invoices
       WHERE SupplierId         = @invoices-SupplierId
@@ -289,6 +293,54 @@ CLASS lhc_Invoice IMPLEMENTATION.
 
     result = VALUE #( FOR invoice IN invoices
                       ( %tky = invoice-%tky %param = invoice ) ).
+  ENDMETHOD.
+
+  METHOD validateMandatory.
+    READ ENTITIES OF zr_ig_invoice IN LOCAL MODE
+      ENTITY Invoice FIELDS ( InvoiceDate SupplierInvoiceRef ) WITH CORRESPONDING #( keys )
+      RESULT DATA(invoices).
+
+
+  LOOP AT invoices INTO DATA(invoice).
+      APPEND VALUE #( %tky = invoice-%tky %state_area = 'VALIDATE_MANDATORY' ) TO reported-invoice.
+
+      IF invoice-InvoiceDate IS INITIAL.
+        APPEND VALUE #( %tky = invoice-%tky ) TO failed-invoice.
+        APPEND VALUE #( %tky        = invoice-%tky
+                        %state_area = 'VALIDATE_MANDATORY'
+                        %msg        = new_message( id       = 'ZIG_MSG'
+                                                   number   = '006'
+                                                   severity = if_abap_behv_message=>severity-error
+                                                   v1       = 'Invoice Date' )
+                        %element-InvoiceDate = if_abap_behv=>mk-on ) TO reported-invoice.
+      ENDIF.
+
+      IF invoice-SupplierInvoiceRef IS INITIAL.
+        APPEND VALUE #( %tky = invoice-%tky ) TO failed-invoice.
+        APPEND VALUE #( %tky        = invoice-%tky
+                        %state_area = 'VALIDATE_MANDATORY'
+                        %msg        = new_message( id       = 'ZIG_MSG'
+                                                   number   = '006'
+                                                   severity = if_abap_behv_message=>severity-error
+                                                   v1       = 'Supplier Invoice Ref.' )
+                        %element-SupplierInvoiceRef = if_abap_behv=>mk-on ) TO reported-invoice.
+      ENDIF.
+    ENDLOOP.
+
+      ENDMETHOD.
+
+
+  METHOD releaseInvoice.
+   MODIFY ENTITIES OF zr_ig_invoice IN LOCAL MODE
+      ENTITY Invoice
+        UPDATE FIELDS ( Status )
+        WITH VALUE #( FOR key IN keys ( %tky = key-%tky Status = 'F' ) ).
+
+    READ ENTITIES OF zr_ig_invoice IN LOCAL MODE
+      ENTITY Invoice ALL FIELDS WITH CORRESPONDING #( keys )
+      RESULT DATA(invoices).
+
+    result = VALUE #( FOR invoice IN invoices ( %tky = invoice-%tky %param = invoice ) ).
   ENDMETHOD.
 
 ENDCLASS.
