@@ -27,7 +27,7 @@ Nur wenn alle drei zusammenpassen, darf die Rechnung freigegeben werden.
 - Freigegebene Rechnungen können nicht mehr bearbeitet, gelöscht oder neu geprüft werden
 - Vier-Augen-Prinzip: Wer eine Rechnung erfasst hat, darf sie nicht selbst freigeben
 - Statusfarben: Abweichung rot, geprüft und freigegeben grün
-- Wertehilfen für Lieferant, Währung und Bestellposition
+- Wertehilfen für Lieferant, Währung, Mengeneinheit und Bestellposition
 - Auswertung: Rechnungen pro Status, offene Rechnungen mit Fälligkeit, Skonto-Chancen der nächsten 7 Tage mit möglicher Ersparnis
 - ABAP-Unit-Tests für die Prüfregeln (7 Tests), inklusive Grenzfall „genau 2 % Abweichung“
 
@@ -150,26 +150,11 @@ Zusätzlich legt der Generator die geprüfte Rechnung `RE-2026-00001` eines ande
 ```
 InvoiceGuard/
 ├─ Implementierung/src/   ABAP-Objekte (abapGit)
-├─ Planungsdokumente/     Projektauftrag mit Tickets und geplantem Datenmodell (PDF)
 ├─ Dokumentation/         Screenshots
 └─ README.md
 ```
 
 Umgesetzt in 12 Tickets mit je eigenem Commit (`T01` bis `T12`), von den Tabellen bis zu den Unit-Tests.
-
-## Abweichungen von der Planung
-
-Der [Projektauftrag](Planungsdokumente/Projektauftrag_InvoiceGuard.pdf) wurde vor der Umsetzung geschrieben. Während der Umsetzung habe ich einige Punkte bewusst anders gelöst:
-
-- **Englische Objektnamen** (`ZIG_PO` statt `ZIG_BEST`, `ZIG_INVOICE` statt `ZIG_RECH`), passend zu den Namen im SAP-Standard. Nur `ZIG_LIEFERANT` ist deutsch geblieben.
-- **Eigene Materialtabelle** `ZIG_MATERIAL` statt einer Tabelle aus einem anderen Projekt, damit InvoiceGuard für sich allein installierbar ist.
-- **Freigabe:** Statt Wertgrenze (10.000 EUR) und eigener Rolle „Leitung“ gibt es das Vier-Augen-Prinzip über eine Instanz-Berechtigung. Im Trial gibt es nur einen Benutzer, eigene Berechtigungsobjekte und Rollen ließen sich dort nicht sinnvoll testen.
-- **Aktion „Sperren“ und Status E / G** entfallen. Gesperrt wird der Lieferant (Stammdaten), nicht die Rechnung.
-- **Lieferantenregel:** Statt „Bestellung gehört zum Lieferanten“ prüft eine Validierung, ob der Lieferant existiert und nicht gesperrt ist.
-- **Preisregel** nur mit 2 % Toleranz, ohne zusätzliche 50-EUR-Grenze.
-- **Prüf-Engine:** Interface mit zwei Regelklassen, die Regeln werden im Konstruktor des Matchers registriert. Auf abstrakte Basisklasse und Factory habe ich verzichtet, weil es bei zwei Regeln keinen Mehrwert hatte.
-- **Auswertung:** Statt „geliefert, aber nicht berechnet“ und Abweichungsquote zeigt der Report Status, Fälligkeiten und mögliche Skonto-Ersparnis.
-- **Nicht umgesetzt:** Kopfbetrag aus den Positionen berechnen, Formatprüfung der Lieferanten-Rechnungsnummer per Regex, CDS Access Control.
 
 ## Bekannte Einschränkungen
 
