@@ -29,7 +29,7 @@ Nur wenn alle drei zusammenpassen, darf die Rechnung freigegeben werden.
 - Statusfarben: Abweichung rot, geprüft und freigegeben grün
 - Wertehilfen für Lieferant, Währung und Bestellposition
 - Auswertung: Rechnungen pro Status, offene Rechnungen mit Fälligkeit, Skonto-Chancen der nächsten 7 Tage mit möglicher Ersparnis
-- ABAP-Unit-Tests für die Prüfregeln, inklusive Grenzfällen
+- ABAP-Unit-Tests für die Prüfregeln (7 Tests), inklusive Grenzfall „genau 2 % Abweichung“
 
 ## Screenshots
 
@@ -41,7 +41,7 @@ Nur wenn alle drei zusammenpassen, darf die Rechnung freigegeben werden.
 
 ### Rechnung mit Positionen
 
-Detailseite einer Rechnung mit Kopfdaten, berechneten Fristen und Rechnungspositionen.
+Detailseite einer Rechnung mit Kopfdaten, berechneten Fristen und Rechnungspositionen. Der Button „Release“ ist aktiv, weil die Rechnung von einem anderen Benutzer erfasst wurde.
 
 ![Detailseite](Dokumentation/screenshots/02_object_page.png)
 
@@ -125,6 +125,8 @@ Eine Bestellung hat mehrere Positionen, eine Bestellposition kann mehrere Warene
 | 4500000002 / 00020 | 500 Stück | 0 | noch nichts geliefert |
 | 4500000003 / 00010 | 100 Stück | 100 | Lieferant L003 ist gesperrt |
 
+Zusätzlich legt der Generator die geprüfte Rechnung `RE-2026-00001` eines anderen Benutzers (`MUSTERMANN`) an, damit die Freigabe gezeigt werden kann. Bestehende Rechnungen und Entwürfe werden dabei gelöscht.
+
 ## Installation und Start
 
 ### Voraussetzungen
@@ -140,23 +142,41 @@ Eine Bestellung hat mehrere Positionen, eine Bestellposition kann mehrere Warene
 3. Pull ausführen und alle Objekte aktivieren.
 4. Klasse `ZCL_IG_FILL_DATA` mit F9 ausführen, um Testdaten anzulegen.
 5. Service Binding `ZUI_IG_INVOICE_O4` öffnen, veröffentlichen und die Vorschau für `Invoice` starten.
+6. Unit-Tests ausführen: Klasse `ZCL_IG_RULE_QUANTITY` oder `ZCL_IG_RULE_PRICE` öffnen und Strg+Shift+F10 drücken.
+7. Auswertung: Klasse `ZCL_IG_REPORT` mit F9 ausführen.
 
 ## Aufbau des Projekts
 
 ```
 InvoiceGuard/
 ├─ Implementierung/src/   ABAP-Objekte (abapGit)
-├─ Planungsdokumente/     Projektauftrag, Tickets, Datenmodell
+├─ Planungsdokumente/     Projektauftrag mit Tickets und geplantem Datenmodell (PDF)
 ├─ Dokumentation/         Screenshots
 └─ README.md
 ```
 
 Umgesetzt in 12 Tickets mit je eigenem Commit (`T01` bis `T12`), von den Tabellen bis zu den Unit-Tests.
 
+## Abweichungen von der Planung
+
+Der [Projektauftrag](Planungsdokumente/Projektauftrag_InvoiceGuard.pdf) wurde vor der Umsetzung geschrieben. Während der Umsetzung habe ich einige Punkte bewusst anders gelöst:
+
+- **Englische Objektnamen** (`ZIG_PO` statt `ZIG_BEST`, `ZIG_INVOICE` statt `ZIG_RECH`), passend zu den Namen im SAP-Standard. Nur `ZIG_LIEFERANT` ist deutsch geblieben.
+- **Eigene Materialtabelle** `ZIG_MATERIAL` statt einer Tabelle aus einem anderen Projekt, damit InvoiceGuard für sich allein installierbar ist.
+- **Freigabe:** Statt Wertgrenze (10.000 EUR) und eigener Rolle „Leitung“ gibt es das Vier-Augen-Prinzip über eine Instanz-Berechtigung. Im Trial gibt es nur einen Benutzer, eigene Berechtigungsobjekte und Rollen ließen sich dort nicht sinnvoll testen.
+- **Aktion „Sperren“ und Status E / G** entfallen. Gesperrt wird der Lieferant (Stammdaten), nicht die Rechnung.
+- **Lieferantenregel:** Statt „Bestellung gehört zum Lieferanten“ prüft eine Validierung, ob der Lieferant existiert und nicht gesperrt ist.
+- **Preisregel** nur mit 2 % Toleranz, ohne zusätzliche 50-EUR-Grenze.
+- **Prüf-Engine:** Interface mit zwei Regelklassen, die Regeln werden im Konstruktor des Matchers registriert. Auf abstrakte Basisklasse und Factory habe ich verzichtet, weil es bei zwei Regeln keinen Mehrwert hatte.
+- **Auswertung:** Statt „geliefert, aber nicht berechnet“ und Abweichungsquote zeigt der Report Status, Fälligkeiten und mögliche Skonto-Ersparnis.
+- **Nicht umgesetzt:** Kopfbetrag aus den Positionen berechnen, Formatprüfung der Lieferanten-Rechnungsnummer per Regex, CDS Access Control.
+
 ## Bekannte Einschränkungen
 
-- Im Trial gibt es nur einen Benutzer, deshalb lässt sich der Fall „Freigabe durch eine andere Person“ nicht live zeigen.
-- Die Rechnungsnummer wird über `MAX()` ermittelt. Produktiv würde man ein Nummernkreisobjekt verwenden.
+- **Ein Benutzer im Trial:** Um das Vier-Augen-Prinzip trotzdem zu zeigen, legt der Testdaten-Generator eine Rechnung mit dem Ersteller `MUSTERMANN` an. Nur diese kann freigegeben werden.
+- **Rechnungsnummer:** Sie wird über `MAX()` ermittelt. Produktiv würde man ein Nummernkreisobjekt verwenden, damit auch gleichzeitiges Speichern sicher ist.
+- **Positionsnummer:** Die Nummer der Rechnungsposition (10, 20, …) wird von Hand eingegeben und noch nicht automatisch vergeben.
+- **Bruttobetrag:** Der Rechnungsbetrag wird nicht gegen die Summe der Positionen geprüft. Das wäre eine weitere Prüfregel, die sich über `ZIF_IG_CHECK_RULE` ergänzen lässt.
 
 ## Autor
 
