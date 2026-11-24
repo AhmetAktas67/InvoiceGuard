@@ -17,6 +17,12 @@ CLASS zcl_ig_fill_data IMPLEMENTATION.
 
   METHOD if_oo_adt_classrun~main.
 
+ DELETE FROM zig_invoice_item.
+    DELETE FROM zig_invoice.
+    DELETE FROM zig_invitem_d.
+    DELETE FROM zig_invoice_d.
+
+
 
     DELETE FROM zig_gr.
     DELETE FROM zig_po_item.
@@ -90,6 +96,59 @@ CLASS zcl_ig_fill_data IMPLEMENTATION.
       " 4500000003/10: voll, aber Lieferant gesperrt
       ( gr_id = 'GR00000005' po_id = '4500000003' po_item = '00010'
         gr_date = '20261115' quantity = 100 unit = 'ST' )
+    ) ).
+
+
+
+    " Eine geprüfte Rechnung von einem ANDEREN Benutzer
+    " -> darf freigegeben werden (Vier-Augen-Prinzip)
+    DATA(today) = cl_abap_context_info=>get_system_date( ).
+    DATA(invoice_date) = CONV d( today - 3 ).
+
+    DATA now TYPE timestampl.
+    GET TIME STAMP FIELD now.
+
+    TRY.
+        DATA(invoice_uuid) = cl_system_uuid=>create_uuid_x16_static( ).
+        DATA(item_uuid1)   = cl_system_uuid=>create_uuid_x16_static( ).
+        DATA(item_uuid2)   = cl_system_uuid=>create_uuid_x16_static( ).
+      CATCH cx_uuid_error.
+        out->write( |UUID konnte nicht erzeugt werden.| ).
+        RETURN.
+    ENDTRY.
+
+    INSERT zig_invoice FROM @( VALUE #(
+      invoice_uuid          = invoice_uuid
+      invoice_id            = 'RE-2026-00001'
+      supplier_id           = 'L001'
+      supplier_invoice_ref  = 'FU-2026-0815'
+      invoice_date          = invoice_date
+      gross_amount          = '29.75'
+      currency              = 'EUR'
+      status                = 'O'
+      discount_due_date     = invoice_date + 14
+      net_due_date          = invoice_date + 30
+      local_created_by      = 'MUSTERMANN'
+      local_created_at      = now
+      local_last_changed_by = 'MUSTERMANN'
+      local_last_changed_at = now
+      last_changed_at       = now ) ).
+
+    INSERT zig_invoice_item FROM TABLE @( VALUE #(
+      ( item_uuid = item_uuid1 invoice_uuid = invoice_uuid item_no = '00010'
+        po_id = '4500000001' po_item = '00010'
+        quantity = 100 unit = 'ST' net_price = '0.20' currency = 'EUR'
+        check_status = 'O'
+        local_created_by = 'MUSTERMANN' local_created_at = now
+        local_last_changed_by = 'MUSTERMANN' local_last_changed_at = now
+        last_changed_at = now )
+      ( item_uuid = item_uuid2 invoice_uuid = invoice_uuid item_no = '00020'
+        po_id = '4500000001' po_item = '00020'
+        quantity = 50 unit = 'ST' net_price = '0.10' currency = 'EUR'
+        check_status = 'O'
+        local_created_by = 'MUSTERMANN' local_created_at = now
+        local_last_changed_by = 'MUSTERMANN' local_last_changed_at = now
+        last_changed_at = now )
     ) ).
 
     out->write( |Testdaten angelegt.| ).
