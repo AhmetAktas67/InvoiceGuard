@@ -33,10 +33,29 @@ CLASS lhc_Invoice IMPLEMENTATION.
 
   METHOD get_instance_authorizations.
 
+      READ ENTITIES OF zr_ig_invoice IN LOCAL MODE
+      ENTITY Invoice FIELDS ( LocalCreatedBy ) WITH CORRESPONDING #( keys )
+      RESULT DATA(invoices).
+
+    DATA(current_user) = cl_abap_context_info=>get_user_technical_name( ).
+
+     result = VALUE #( FOR invoice IN invoices
+      ( %tky                   = invoice-%tky
+        %update                = if_abap_behv=>auth-allowed
+        %delete                = if_abap_behv=>auth-allowed
+        %action-Edit           = if_abap_behv=>auth-allowed
+        %action-checkInvoice   = if_abap_behv=>auth-allowed
+
+        %action-releaseInvoice = COND #( WHEN invoice-LocalCreatedBy = current_user
+                                         THEN if_abap_behv=>auth-unauthorized
+                                         ELSE if_abap_behv=>auth-allowed ) ) ).
+
   ENDMETHOD.
 
   METHOD get_global_authorizations.
-
+    IF requested_authorizations-%create = if_abap_behv=>mk-on.
+      result-%create = if_abap_behv=>auth-allowed.
+    ENDIF.
   ENDMETHOD.
 
   METHOD setInvoiceId.
@@ -249,9 +268,11 @@ CLASS lhc_Invoice IMPLEMENTATION.
     DATA item_updates   TYPE TABLE FOR UPDATE zr_ig_invoice\\Item.
     DATA deviations     TYPE SORTED TABLE OF sysuuid_x16 WITH UNIQUE KEY table_line.
     DATA status         TYPE zig_invoice_item-check_status.
+    DATA with_items TYPE SORTED TABLE OF sysuuid_x16 WITH UNIQUE KEY table_line.
 
     LOOP AT items INTO DATA(item).
       TRY.
+       INSERT item-InvoiceUuid INTO TABLE with_items.
           status = matcher->check_item( i_po_id     = item-PoId
                                         i_po_item   = item-PoItem
                                         i_quantity  = item-Quantity
@@ -276,17 +297,19 @@ CLASS lhc_Invoice IMPLEMENTATION.
     DATA invoice_updates TYPE TABLE FOR UPDATE zr_ig_invoice\\Invoice.
 
     invoice_updates = VALUE #( FOR key IN keys
-                               ( %tky   = key-%tky
-                                 Status = COND #( WHEN line_exists( deviations[ table_line = key-InvoiceUuid ] )
-                                                  THEN 'A'
-                                                  ELSE 'O' ) ) ).
+      LET deviation = xsdbool( line_exists( deviations[ table_line = key-InvoiceUuid ] )
+                            OR NOT line_exists( with_items[ table_line = key-InvoiceUuid ] ) )
+      IN
+      ( %tky              = key-%tky
+        Status            = COND #( WHEN deviation = abap_true THEN 'A' ELSE 'O' )
+        StatusCriticality = COND #( WHEN deviation = abap_true THEN 1   ELSE 3 ) ) ).
 
     " Beides auf einmal schreiben
     MODIFY ENTITIES OF zr_ig_invoice IN LOCAL MODE
       ENTITY Item
         UPDATE FIELDS ( CheckStatus ) WITH item_updates
       ENTITY Invoice
-        UPDATE FIELDS ( Status ) WITH invoice_updates.
+        UPDATE FIELDS ( Status StatusCriticality ) WITH invoice_updates.
 
     " Ergebnis an Fiori zurückgeben
     READ ENTITIES OF zr_ig_invoice IN LOCAL MODE
@@ -347,8 +370,8 @@ CLASS lhc_Invoice IMPLEMENTATION.
   METHOD releaseInvoice.
    MODIFY ENTITIES OF zr_ig_invoice IN LOCAL MODE
       ENTITY Invoice
-        UPDATE FIELDS ( Status )
-        WITH VALUE #( FOR key IN keys ( %tky = key-%tky Status = 'F' ) ).
+      UPDATE FIELDS ( Status StatusCriticality )
+        WITH VALUE #( FOR key IN keys ( %tky = key-%tky Status = 'F' StatusCriticality = 3 ) ).
 
     READ ENTITIES OF zr_ig_invoice IN LOCAL MODE
       ENTITY Invoice ALL FIELDS WITH CORRESPONDING #( keys )
